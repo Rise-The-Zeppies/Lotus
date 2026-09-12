@@ -1,0 +1,221 @@
+// !$*UTF8*$!
+{
+  archiveVersion = 1;
+  classes = {};
+  objectVersion = 56;
+  objects = {
+
+/* ========== FILE REFERENCES ========== */
+
+    1 /* LotusApp.swift */ = {
+      isa = PBXFileReference;
+      lastKnownFileType = sourcecode.swift;
+      path = LotusApp.swift;
+      sourceTree = "<group>";
+    };
+
+    2 /* ContentView.swift */ = {
+      isa = PBXFileReference;
+      lastKnownFileType = sourcecode.swift;
+      path = ContentView.swift;
+      sourceTree = "<group>";
+    };
+
+    3 /* Widgets.swift */ = {
+      isa = PBXFileReference;
+      lastKnownFileType = sourcecode.swift;
+      path = Widgets.swift;
+      sourceTree = "<group>";
+    };
+
+    4 /* Info.plist */ = {
+      isa = PBXFileReference;
+      lastKnownFileType = text.plist.xml;
+      path = Info.plist;
+      sourceTree = "<group>";
+    };
+
+    5 /* NetworkManager.swift */ = {
+      isa = PBXFileReference;
+      lastKnownFileType = sourcecode.swift;
+      path = NetworkManager.swift;
+      sourceTree = "<group>";
+    };
+
+    6 /* Lotus.app */ = {
+      isa = PBXFileReference;
+      explicitFileType = wrapper.application;
+      path = Lotus.app;
+      sourceTree = BUILT_PRODUCTS_DIR;
+    };
+
+/* ========== GROUPS ========== */
+
+    10 /* Main Group */ = {
+      isa = PBXGroup;
+      children = (
+        11 /* Lotus source group */,
+        12 /* Products */,
+      );
+      sourceTree = "<group>";
+    };
+
+    11 /* Lotus source group */ = {
+      isa = PBXGroup;
+      children = (
+        1 /* LotusApp.swift */,
+        2 /* ContentView.swift */,
+        3 /* Widgets.swift */,
+        5 /* NetworkManager.swift */,
+        4 /* Info.plist */,
+      );
+      path = Lotus;
+      sourceTree = "<group>";
+    };
+
+    12 /* Products */ = {
+      isa = PBXGroup;
+      children = (
+        6 /* Lotus.app */,
+      );
+      name = Products;
+      sourceTree = "<group>";
+    };
+
+/* ========== BUILD PHASES ========== */
+
+    20 /* Sources build phase */ = {
+      isa = PBXSourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        21 /* LotusApp.swift in Sources */,
+        22 /* ContentView.swift in Sources */,
+        23 /* Widgets.swift in Sources */,
+        24 /* NetworkManager.swift in Sources */,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+
+    21 /* LotusApp.swift in Sources */ = {
+      isa = PBXBuildFile;
+      fileRef = 1 /* LotusApp.swift */;
+    };
+
+    22 /* ContentView.swift in Sources */ = {
+      isa = PBXBuildFile;
+      fileRef = 2 /* ContentView.swift */;
+    };
+
+    23 /* Widgets.swift in Sources */ = {
+      isa = PBXBuildFile;
+      fileRef = 3 /* Widgets.swift */;
+    };
+
+    24 /* NetworkManager.swift in Sources */ = {
+      isa = PBXBuildFile;
+      fileRef = 5 /* NetworkManager.swift */;
+    };
+
+/* ========== TARGET ========== */
+
+    30 /* Lotus target */ = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = 40;
+      buildPhases = (
+        20 /* Sources build phase */,
+      );
+      buildRules = (
+      );
+      dependencies = (
+      );
+      name = Lotus;
+      productName = Lotus;
+      productReference = 6 /* Lotus.app */;
+      productType = "com.apple.product-type.application";
+    };
+
+/* ========== PROJECT ========== */
+
+    31 /* Project object */ = {
+      isa = PBXProject;
+      attributes = {
+        LastUpgradeCheck = 1500;
+        ORGANIZATIONNAME = "Eco0";
+      };
+      buildConfigurationList = 41;
+      compatibilityVersion = "Xcode 14.0";
+      developmentRegion = en;
+      hasScannedForEncodings = 0;
+      knownRegions = (
+        en,
+      );
+      mainGroup = 10 /* Main Group */;
+      productRefGroup = 12 /* Products */;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (
+        30 /* Lotus target */,
+      );
+    };
+
+/* ========== BUILD CONFIGS (DEBUG / RELEASE) ========== */
+
+    40 /* Target build configs */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        42 /* Debug */,
+        43 /* Release */,
+      );
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+
+    41 /* Project build configs */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        44 /* Project Debug */,
+        45 /* Project Release */,
+      );
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+
+    42 /* Debug */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        PRODUCT_NAME = Lotus;
+        SWIFT_VERSION = 5.0;
+        INFOPLIST_FILE = Lotus/Info.plist;
+        MACOSX_DEPLOYMENT_TARGET = 13.0;
+      };
+      name = Debug;
+    };
+
+    43 /* Release */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        PRODUCT_NAME = Lotus;
+        SWIFT_VERSION = 5.0;
+        INFOPLIST_FILE = Lotus/Info.plist;
+        MACOSX_DEPLOYMENT_TARGET = 13.0;
+      };
+      name = Release;
+    };
+
+    44 /* Project Debug */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+      };
+      name = Debug;
+    };
+
+    45 /* Project Release */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+      };
+      name = Release;
+    };
+  };
+
+  rootObject = 31 /* Project object */;
+}
