@@ -1,0 +1,44 @@
+name: Build Lotus for macOS Monterey
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-12
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode.app
+
+    - name: Build Lotus.app
+      run: |
+        mkdir -p build/Lotus.app/Contents/MacOS
+        mkdir -p build/Lotus.app/Contents/Resources
+
+        xcrun swiftc \
+          -target x86_64-apple-macos12 \
+          -framework SwiftUI \
+          -framework AppKit \
+          -framework Foundation \
+          -framework CoreLocation \
+          -o build/Lotus.app/Contents/MacOS/Lotus \
+          LotusApp.swift \
+          DashboardView.swift \
+          Widgies/*.swift
+
+        cp Info.plist build/Lotus.app/Contents/
+        cp vauklt.icns build/Lotus.app/Contents/Resources/Lotus.icns
+
+        chmod +x build/Lotus.app/Contents/MacOS/Lotus
+
+    - name: Upload Lotus.app
+      uses: actions/upload-artifact@v3
+      with:
+        name: Lotus-app
+        path: build/Lotus.app
