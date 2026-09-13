@@ -1,476 +1,219 @@
+import WidgetKit
 import SwiftUI
-import PhotosUI
-import AppKit
+import Foundation
 
-// MARK: - Glass Background
+// ---------------------------------------------------------
+// WEATHER WIDGET
+// ---------------------------------------------------------
 
-struct Glass: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(.ultraThinMaterial)
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
+struct WeatherEntry: TimelineEntry {
+    let date: Date
+    let temperature: Double
+}
+
+struct WeatherProvider: TimelineProvider {
+    func placeholder(in context: Context) -> WeatherEntry {
+        WeatherEntry(date: Date(), temperature: 72)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (WeatherEntry) -> ()) {
+        completion(WeatherEntry(date: Date(), temperature: 72))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<WeatherEntry>) -> ()) {
+        Task {
+            let temp = await fetchTemperature()
+            let entry = WeatherEntry(date: Date(), temperature: temp)
+            let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        }
+    }
+
+    func fetchTemperature() async -> Double {
+        let url = URL(string: "https://api.open-meteo.com/v1/forecast?latitude=29.42&longitude=-98.49&current_weather=true")!
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let current = json?["current_weather"] as? [String: Any]
+            return current?["temperature"] as? Double ?? 0
+        } catch {
+            return 0
+        }
     }
 }
 
-//////////////////////////////////////////////////////////////
-// WEATHER
-//////////////////////////////////////////////////////////////
+struct WeatherWidgetEntryView: View {
+    var entry: WeatherProvider.Entry
 
-struct WeatherWidget: View {
     var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Weather").font(.headline)
-                Text("72° · Partly Cloudy").font(.title2)
-                Text("San Antonio, TX")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(16)
+        VStack {
+            Text("San Antonio")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Text("\(Int(entry.temperature))°")
+                .font(.system(size: 42, weight: .bold))
         }
-        .frame(width: 240, height: 140)
+        .padding()
     }
 }
 
-//////////////////////////////////////////////////////////////
-// CLOCK
-//////////////////////////////////////////////////////////////
+struct WeatherWidget: Widget {
+    let kind: String = "WeatherWidget"
 
-struct ClockWidget: View {
-    @State private var now = Date()
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 6) {
-                Text(DateFormatter.localizedString(from: now, dateStyle: .none, timeStyle: .medium))
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                Text(DateFormatter.localizedString(from: now, dateStyle: .medium, timeStyle: .none))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: WeatherProvider()) { entry in
+            WeatherWidgetEntryView(entry: entry)
         }
-        .frame(width: 260, height: 160)
-        .onReceive(timer) { now = $0 }
+        .configurationDisplayName("Weather")
+        .description("Shows the current temperature in San Antonio.")
     }
 }
 
-//////////////////////////////////////////////////////////////
-// RECENT FILES
-//////////////////////////////////////////////////////////////
+// ---------------------------------------------------------
+// NEWS WIDGET (YOUR KEY ADDED)
+// ---------------------------------------------------------
 
-struct RecentFilesWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Recent Files").font(.headline)
-                Text("File1.txt").font(.caption)
-                Text("File2.txt").font(.caption)
-                Text("File3.txt").font(.caption)
-            }
-            .padding(16)
+struct NewsEntry: TimelineEntry {
+    let date: Date
+    let headline: String
+}
+
+struct NewsProvider: TimelineProvider {
+    func placeholder(in context: Context) -> NewsEntry {
+        NewsEntry(date: Date(), headline: "Loading…")
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (NewsEntry) -> ()) {
+        completion(NewsEntry(date: Date(), headline: "Snapshot"))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<NewsEntry>) -> ()) {
+        Task {
+            let headline = await fetchHeadline()
+            let entry = NewsEntry(date: Date(), headline: headline)
+            let nextUpdate = Date().addingTimeInterval(60 * 30)
+            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
         }
-        .frame(width: 240, height: 140)
+    }
+
+    func fetchHeadline() async -> String {
+        let apiKey = "3101f035edc84b7b8d511debb70914fe"
+        let url = URL(string: "https://newsapi.org/v2/top-headlines?country=us&apiKey=\(apiKey)")!
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let articles = json?["articles"] as? [[String: Any]]
+            return articles?.first?["title"] as? String ?? "No news available"
+        } catch {
+            return "Error loading news"
+        }
     }
 }
 
-//////////////////////////////////////////////////////////////
-// MUSIC PLAYER
-//////////////////////////////////////////////////////////////
+struct NewsWidgetEntryView: View {
+    var entry: NewsProvider.Entry
 
-struct MusicPlayerWidget: View {
     var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Music Player").font(.headline)
-                Text("Now Playing:").font(.caption).foregroundColor(.secondary)
-                Text("Track Name – Artist").font(.subheadline)
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
+        Text(entry.headline)
+            .font(.headline)
+            .padding()
     }
 }
 
-//////////////////////////////////////////////////////////////
-// STOCKS
-//////////////////////////////////////////////////////////////
+struct NewsWidget: Widget {
+    let kind: String = "NewsWidget"
 
-struct StocksWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Stocks").font(.headline)
-                Text("AAPL  189.23  +1.2%")
-                Text("MSFT  412.87  +0.8%")
-                Text("GOOG  142.11  -0.3%")
-            }
-            .font(.caption)
-            .padding(16)
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: NewsProvider()) { entry in
+            NewsWidgetEntryView(entry: entry)
         }
-        .frame(width: 240, height: 140)
+        .configurationDisplayName("News")
+        .description("Shows the top US headline.")
     }
 }
 
-//////////////////////////////////////////////////////////////
-// GAMES
-//////////////////////////////////////////////////////////////
+// ---------------------------------------------------------
+// PHOTO WIDGET (YOUR UNSPLASH KEY ADDED)
+// ---------------------------------------------------------
 
-struct GamesWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Games").font(.headline)
-                Text("• Snake")
-                Text("• Tic-Tac-Toe (bot)")
-            }
-            .font(.caption)
-            .padding(16)
+struct PhotoEntry: TimelineEntry {
+    let date: Date
+    let image: UIImage
+}
+
+struct PhotoProvider: TimelineProvider {
+    func placeholder(in context: Context) -> PhotoEntry {
+        PhotoEntry(date: Date(), image: UIImage(systemName: "photo")!)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (PhotoEntry) -> ()) {
+        completion(PhotoEntry(date: Date(), image: UIImage(systemName: "photo")!))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PhotoEntry>) -> ()) {
+        Task {
+            let img = await fetchImage()
+            let entry = PhotoEntry(date: Date(), image: img)
+            let nextUpdate = Date().addingTimeInterval(60 * 60)
+            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
         }
-        .frame(width: 240, height: 140)
+    }
+
+    func fetchImage() async -> UIImage {
+        let accessKey = "vJC7EagkXk0KAlwY0ZSoNpHHT8yg9BLIym6QPnzo5HQ"
+        let url = URL(string: "https://api.unsplash.com/photos/random?client_id=\(accessKey)&orientation=squarish")!
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            if let urls = json?["urls"] as? [String: Any],
+               let imageUrl = urls["small"] as? String,
+               let finalURL = URL(string: imageUrl) {
+
+                let (imgData, _) = try await URLSession.shared.data(from: finalURL)
+                return UIImage(data: imgData) ?? UIImage(systemName: "photo")!
+            }
+        } catch {}
+
+        return UIImage(systemName: "photo")!
     }
 }
 
-//////////////////////////////////////////////////////////////
-// AUDIO MIXER
-//////////////////////////////////////////////////////////////
+struct PhotoWidgetEntryView: View {
+    var entry: PhotoProvider.Entry
 
-struct AudioMixerWidget: View {
     var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Audio Mixer").font(.headline)
-                Slider(value: .constant(0.6))
-                Slider(value: .constant(0.3))
-                Slider(value: .constant(0.8))
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 160)
+        Image(uiImage: entry.image)
+            .resizable()
+            .scaledToFill()
+            .clipped()
     }
 }
 
-//////////////////////////////////////////////////////////////
-// BOOKMARKS
-//////////////////////////////////////////////////////////////
+struct PhotoWidget: Widget {
+    let kind: String = "PhotoWidget"
 
-struct BookmarksWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Bookmarks").font(.headline)
-                Text("• lotus.app")
-                Text("• github.com")
-                Text("• youtube.com")
-            }
-            .font(.caption)
-            .padding(16)
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: PhotoProvider()) { entry in
+            PhotoWidgetEntryView(entry: entry)
         }
-        .frame(width: 240, height: 140)
+        .configurationDisplayName("Random Photo")
+        .description("Shows a random photo from Unsplash.")
     }
 }
 
-//////////////////////////////////////////////////////////////
-// SCREEN TIME
-//////////////////////////////////////////////////////////////
+// ---------------------------------------------------------
+// WIDGET BUNDLE
+// ---------------------------------------------------------
 
-struct ScreenTimeWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Screen Time").font(.headline)
-                Text("Today: 4h 32m").font(.subheadline)
-                Text("Most used: Browser, Editor")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// PHOTOS
-//////////////////////////////////////////////////////////////
-
-struct PhotosWidget: View {
-    @State private var photos: [UIImage] = []
-
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Photos").font(.headline)
-
-                if photos.isEmpty {
-                    Text("No photos loaded")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(photos, id: \.self) { img in
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                            }
-                        }
-                    }
-                }
-
-                Button("Load Photos") { loadPhotos() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-            }
-            .padding(16)
-        }
-        .frame(width: 260, height: 160)
-    }
-
-    private func loadPhotos() {
-        let fetch = PHAsset.fetchAssets(with: .image, options: nil)
-        var imgs: [UIImage] = []
-
-        fetch.enumerateObjects { asset, _, _ in
-            let manager = PHImageManager.default()
-            let opts = PHImageRequestOptions()
-            opts.isSynchronous = true
-
-            manager.requestImage(
-                for: asset,
-                targetSize: CGSize(width: 200, height: 200),
-                contentMode: .aspectFill,
-                options: opts
-            ) { image, _ in
-                if let image = image { imgs.append(image) }
-            }
-        }
-
-        DispatchQueue.main.async { self.photos = imgs }
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// SYSTEM MONITOR (CPU/RAM)
-//////////////////////////////////////////////////////////////
-
-struct SystemMonitorWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 8) {
-                Text("System Monitor").font(.headline)
-                Text("CPU: 23%")
-                Text("RAM: 8.1 GB / 16 GB")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// APP LAUNCHER
-//////////////////////////////////////////////////////////////
-
-struct AppLauncherWidget: View {
-    let apps = ["Safari", "Finder", "Terminal", "Notes"]
-
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("App Launcher").font(.headline)
-                ForEach(apps, id: \.self) { app in
-                    Text("• \(app)")
-                }
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 160)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// KEYBOARD VIEWER
-//////////////////////////////////////////////////////////////
-
-struct KeyboardViewerWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 10) {
-                Text("Keyboard Viewer").font(.headline)
-                Text("Press any key…")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// NOTES
-//////////////////////////////////////////////////////////////
-
-struct NotesWidget: View {
-    @State private var text = ""
-
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading) {
-                Text("Notes").font(.headline)
-                TextEditor(text: $text)
-                    .frame(height: 80)
-                    .background(Color.clear)
-            }
-            .padding(16)
-        }
-        .frame(width: 260, height: 160)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// CALCULATOR
-//////////////////////////////////////////////////////////////
-
-struct CalculatorWidget: View {
-    @State private var a = ""
-    @State private var b = ""
-    @State private var result = ""
-
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 8) {
-                Text("Calculator").font(.headline)
-                TextField("A", text: $a)
-                TextField("B", text: $b)
-                Button("Add") {
-                    if let x = Double(a), let y = Double(b) {
-                        result = "\(x + y)"
-                    }
-                }
-                Text("Result: \(result)")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 180)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// CALENDAR PEEK
-//////////////////////////////////////////////////////////////
-
-struct CalendarPeekWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 8) {
-                Text("Calendar Peek").font(.headline)
-                Text("Wed, Sep 2, 2026")
-                Text("Events: None")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// CLIPBOARD HISTORY
-//////////////////////////////////////////////////////////////
-
-struct ClipboardHistoryWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Clipboard History").font(.headline)
-                Text("• Copied text 1")
-                Text("• Copied text 2")
-                Text("• Copied text 3")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 160)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// BATTERY & POWER
-//////////////////////////////////////////////////////////////
-
-struct BatteryPowerWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 8) {
-                Text("Battery & Power").font(.headline)
-                Text("Battery: 87%")
-                Text("Charging: Yes")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 140)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// WINDOW SWITCHER
-//////////////////////////////////////////////////////////////
-
-struct WindowSwitcherWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Window Switcher").font(.headline)
-                Text("• Finder")
-                Text("• Safari")
-                Text("• Terminal")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 160)
-    }
-}
-
-//////////////////////////////////////////////////////////////
-// MINI GAMES HUB
-//////////////////////////////////////////////////////////////
-
-struct MiniGamesHubWidget: View {
-    var body: some View {
-        ZStack {
-            Glass()
-            VStack(spacing: 8) {
-                Text("Mini Games Hub").font(.headline)
-                Text("• Snake")
-                Text("• Pong")
-                Text("• Minesweeper")
-            }
-            .padding(16)
-        }
-        .frame(width: 240, height: 160)
+@main
+struct LotusWidgets: WidgetBundle {
+    var body: some Widget {
+        WeatherWidget()
+        NewsWidget()
+        PhotoWidget()
     }
 }
